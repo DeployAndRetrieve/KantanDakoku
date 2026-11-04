@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <application
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:usesCleartextTraffic="false"
+        android:label="かんたん打刻"
+        android:icon="@drawable/ic_clockin"
+        android:roundIcon="@drawable/ic_clockin"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <service android:name=".BackgroundPunchService"
+            android:exported="false" android:foregroundServiceType="dataSync" />
+        <activity android:name=".WebActivity" android:exported="false" />
+        <activity android:name=".ClockInActivity" android:exported="true"
+            android:label="出勤" android:icon="@drawable/ic_clockin"
+            android:theme="@style/ClockInTheme" />
+        <activity android:name=".ClockOutActivity" android:exported="true"
+            android:label="退勤" android:icon="@drawable/ic_clockout"
+            android:theme="@style/ClockOutTheme" />
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
