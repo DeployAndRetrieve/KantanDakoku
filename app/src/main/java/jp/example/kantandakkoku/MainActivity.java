@@ -1,8 +1,6 @@
 package jp.example.kantandakkoku;
 
 import android.app.Activity;
-import android.Manifest;
-import android.os.Build;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -26,7 +24,7 @@ import java.util.List;
 public class MainActivity extends Activity {
     public static final String EXTRA_ACTION = "shortcut_action";
     private EditText companyField, accountField, passwordField;
-    private TextView selectorStatus, backgroundLabel;
+    private TextView selectorStatus;
     private SecureStore secure;
     private AppPrefs prefs;
 
@@ -34,6 +32,9 @@ public class MainActivity extends Activity {
         super.onCreate(state);
         secure = new SecureStore(this);
         prefs = new AppPrefs(this);
+        // The headless WebView approach is disabled in v0.3.5, even for users
+        // who opted into it in v0.3.4.
+        prefs.setBackgroundEnabled(false);
         refreshPinnedShortcuts();
         String shortAction = getIntent().getStringExtra(EXTRA_ACTION);
         if (AppPrefs.IN.equals(shortAction) || AppPrefs.OUT.equals(shortAction)) {
@@ -119,13 +120,9 @@ public class MainActivity extends Activity {
         layout.addView(button("ホーム画面に「出勤」を追加", () -> pinShortcut(AppPrefs.IN)));
         layout.addView(button("ホーム画面に「退勤」を追加", () -> pinShortcut(AppPrefs.OUT)));
         addSpace(layout, 10);
-        layout.addView(text("⑤ バックグラウンド打刻（試験的）", 18, Color.BLACK));
-        layout.addView(text("有効にするとショートカットから画面を開かず、処理中と結果を通知します。WebViewが画面非表示で動かない機種や、位置情報・確認ダイアログが必要なサイトでは失敗します。通知の『送信操作済み』は勤怠記録の確定を意味しません。初回は必ず勤務記録と照合してください。", 13, Color.DKGRAY));
-        backgroundLabel = text("", 16, Color.BLACK);
-        layout.addView(backgroundLabel);
-        layout.addView(button("バックグラウンド処理 ON / OFF", () -> toggleBackground()));
-        updateBackgroundLabel();
-        layout.addView(text("前回のバックグラウンド処理：" + prefs.lastResult(), 13, Color.DKGRAY));
+        layout.addView(text("⑤ 打刻方式", 18, Color.BLACK));
+        layout.addView(text("通常の画面表示方式で動作します。v0.3.4のバックグラウンド打刻は、画面非表示WebViewの動作が不安定なため停止しました。以前ONにした設定は自動的にOFFへ戻ります。", 13, Color.DKGRAY));
+        layout.addView(text("前回のバックグラウンド処理履歴（参考）：" + prefs.lastResult(), 13, Color.DKGRAY));
         addSpace(layout, 10);
         layout.addView(text("ショートカット起動ごとに古いCookieを消して再ログインします。タイムアウトを検出した場合はログイン画面に戻ります。打刻は1回しか試みません。完了記録はサイトで確認してください。", 13, Color.DKGRAY));
         layout.addView(button("保存した認証情報を削除", () -> new AlertDialog.Builder(this)
@@ -143,50 +140,6 @@ public class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         if (selectorStatus != null) updateSelectorStatus();
-        if (backgroundLabel != null) updateBackgroundLabel();
-    }
-
-    private void updateBackgroundLabel() {
-        if (backgroundLabel != null) {
-            backgroundLabel.setText("バックグラウンド打刻：" + (prefs.backgroundEnabled() ? "ON" : "OFF（従来の画面表示）"));
-        }
-    }
-
-    private void toggleBackground() {
-        if (prefs.backgroundEnabled()) {
-            prefs.setBackgroundEnabled(false);
-            updateBackgroundLabel();
-            toast("通常の画面表示方式に戻しました");
-            return;
-        }
-        if (Build.VERSION.SDK_INT >= 33 &&
-                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 43);
-            return;
-        }
-        android.app.NotificationManager manager = (android.app.NotificationManager)
-                getSystemService(NOTIFICATION_SERVICE);
-        if (manager != null && !manager.areNotificationsEnabled()) {
-            toast("通知が無効です。Androidのアプリ設定から通知を有効にしてください");
-            return;
-        }
-        prefs.setBackgroundEnabled(true);
-        updateBackgroundLabel();
-        toast("試験的なバックグラウンド打刻を有効にしました");
-    }
-
-    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grants) {
-        super.onRequestPermissionsResult(requestCode, permissions, grants);
-        if (requestCode != 43) return;
-        boolean granted = grants.length > 0 && grants[0] == PackageManager.PERMISSION_GRANTED;
-        if (granted) {
-            prefs.setBackgroundEnabled(true);
-            toast("バックグラウンド打刻を有効にしました。初回は勤怠記録を確認してください");
-        } else {
-            prefs.setBackgroundEnabled(false);
-            toast("結果通知が必要なため、従来の画面表示を維持します");
-        }
-        updateBackgroundLabel();
     }
 
     private void updateSelectorStatus() {

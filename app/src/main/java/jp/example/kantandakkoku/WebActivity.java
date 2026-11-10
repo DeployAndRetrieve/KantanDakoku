@@ -84,6 +84,16 @@ public class WebActivity extends Activity {
         }
     }
 
+    /** Display the version installed on this device, not a hardcoded source label. */
+    private String installedVersion() {
+        try {
+            String value = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            return value == null || value.trim().isEmpty() ? "不明" : value;
+        } catch (android.content.pm.PackageManager.NameNotFoundException ex) {
+            return "不明";
+        }
+    }
+
     private int dp(int size) { return (int) (getResources().getDisplayMetrics().density * size + 0.5f); }
     private String actionLabel() { return inspectOnly ? "画面解析" : (AppPrefs.LOGIN.equals(kind) ? "ログイン" : AppPrefs.IN.equals(kind) ? "出勤" : "退勤"); }
 
@@ -108,7 +118,8 @@ public class WebActivity extends Activity {
             actionHeader.addView(actionIcon, new LinearLayout.LayoutParams(dp(38), dp(38)));
             TextView actionTitle = new TextView(this);
             actionTitle.setText((AppPrefs.OUT.equals(kind) ? "退勤" : "出勤")
-                    + (learning ? "ボタンの登録" : "打刻処理"));
+                    + (learning ? "ボタンの登録" : "打刻処理")
+                    + " v" + installedVersion());
             actionTitle.setTextSize(19);
             actionTitle.setTextColor(Color.BLACK);
             actionTitle.setPadding(dp(10), 0, 0, 0);
